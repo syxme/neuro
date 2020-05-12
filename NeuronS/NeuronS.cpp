@@ -3,7 +3,10 @@
 
 
 
-
+#define __CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
 int main()
 {
 
@@ -24,26 +27,31 @@ int main()
 
     NeuralNetwork *nn = new NeuralNetwork(0.05f, size,3);
 
-    int epochs = 255000;
+    int epochs = 555000;
+    double* otpt = nullptr;
     for (int i = 1; i < epochs; i++) {
         int right = 0;
         double errorSum = 0;
         int batchSize = 4;
+
         for (int j = 0; j < batchSize; j++) {
            
 
-           double* outputs = nn->feedForward(inputs[j]);
+            otpt = nn->feedForward(inputs[j]);
        
-           errorSum += (target[j][0] - outputs[0]) * (target[j][0] - outputs[0]);
+           errorSum += (target[j][0] - otpt[0]) * (target[j][0] - otpt[0]);
+           
            nn->backpropagation(target[j]);
         }
         if (i % 1000 == 0) {
 
         std::cout << "epoch: " << i <<". correct: " << right <<". error: " <<errorSum<<"\n";
         }
-
+        //_CrtDumpMemoryLeaks();
+        //break;
         
     }
+    _CrtDumpMemoryLeaks();
     double *test = new double[2]{ 1,0 };
     double *outputs = nn->feedForward(test);
     std::cout << "res: " << outputs[0]<< "\n";

@@ -57,47 +57,70 @@ void NeuralNetwork::backpropagation(double *targets)
         errors[i] = ( layers[layer_count - 1].neurons[i]- targets[i]);
     }
     for (int k = layer_count - 2; k >= 0; k--) {
-        Layer left= layers[k];
-        Layer right = layers[k + 1];
-        double* errorsNext = new double[left.size];
-        double *w_d = new double[right.size];
-        double* w_err = new double[right.size];
+        Layer* left= &layers[k];
+        Layer* right = &layers[k + 1];
+        double* errorsNext = new double[left->size];
+        double *w_d = new double[right->size];
+        double* w_err = new double[right->size];
 
-        for (int i = 0; i < right.size; i++) {
-            w_d[i] = errors[i] * derivative(right.neurons[i]);
+        for (int i = 0; i < right->size; i++) {
+            w_d[i] = errors[i] * derivative(right->neurons[i]);
             w_err[i] = w_d[i];
             w_d[i] *= learningRate;
         }
-        double** deltas = new double*[right.size];
-        for (int i = 0; i < right.size; i++) {
-            deltas[i] = new double[left.size];
+        double** deltas = new double*[right->size];
+        for (int i = 0; i < right->size; i++) {
+            deltas[i] = new double[left->size];
         }
-        for (int i = 0; i < right.size; i++) {
-            for (int j = 0; j < left.size; j++) {
-                deltas[i][j] = w_d[i] * left.neurons[j];
+        for (int i = 0; i < right->size; i++) {
+            for (int j = 0; j < left->size; j++) {
+                deltas[i][j] = w_d[i] * left->neurons[j];
             }
         }
-        double **weightsNew = new double *[left.size];
-        for (int i = 0; i < left.size; i++) {
-            weightsNew[i] = new double[left.nextSize];
+        double **weightsNew = new double *[left->size];
+        for (int i = 0; i < left->size; i++) {
+            weightsNew[i] = new double[right->size];
         }
 
-        for (int i = 0; i < right.size; i++) {
-            for (int j = 0; j < left.size; j++) {
-                weightsNew[j][i] = left.weights[j][i] - deltas[i][j];
+        for (int i = 0; i < right->size; i++) {
+            for (int j = 0; j < left->size; j++) {
+                weightsNew[j][i] = left->weights[j][i] - deltas[i][j];
             }
         }
 
-        layers[k].weights = weightsNew;
-        for (int i = 0; i < left.size; i++) {
+        for (int i = 0; i < right->size; i++) {
+            delete[] deltas[i];
+        }
+        for (int i = 0; i < layers[k].nextSize; i++) {
+           delete [] layers[k].weights[i];
+        }
+
+        delete[]layers[k].weights;
+        layers[k].weights = nullptr;
+        delete[] deltas;
+      
+       // layers[k].weights = weightsNew;
+        int sizxx = sizeof(weightsNew);
+        int sizxt = sizeof(weightsNew[0]);
+
+        memcpy(layers[k].weights, weightsNew, sizeof(weightsNew)* sizeof(double));
+
+        for (int i = 0; i < left->size; i++) {
             errorsNext[i] = 0;
-            for (int j = 0; j < right.size; j++) {
+            for (int j = 0; j < right->size; j++) {
                 errorsNext[i] += weightsNew[i][j] * w_err[j];
             }
         }
+       
         delete []errors;
-        errors = new double[left.size];
-        memcpy(errors, errorsNext, left.size * sizeof(double));
+        errors = new double[left->size];
+        memcpy(errors, errorsNext, left->size * sizeof(double));
+        for (int i = 0; i < right->size; i++) {
+            right->biases[i] += w_d[i];
+        }
+        delete[]errorsNext;
+        delete[]w_d;
+        delete[]w_err;
         
         /*
         for (int i = 0; i < right.size; i++) {
@@ -133,10 +156,9 @@ void NeuralNetwork::backpropagation(double *targets)
         for (int i = 0; i < l1.size; i++) {
             l1.biases[i] += w_d[i];
         }*/
-        for (int i = 0; i < right.size; i++) {
-            right.biases[i] += w_d[i];
-        }
+       
     }
+    delete[]errors;
 }
 
 void printDouble(double *xx, int size) {
